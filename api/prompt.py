@@ -2,9 +2,9 @@ from http.server import BaseHTTPRequestHandler
 import json
 import os
 import urllib.request
+from urllib.error import HTTPError
 
 class handler(BaseHTTPRequestHandler):
-    # CORS 설정
     def do_OPTIONS(self):
         self.send_response(200)
         self.send_header('Access-Control-Allow-Origin', '*')
@@ -28,21 +28,21 @@ class handler(BaseHTTPRequestHandler):
                 self.wfile.write(json.dumps({"error": "사진이 전달되지 않았습니다."}).encode('utf-8'))
                 return
 
-            # 프론트엔드에서 넘어온 base64 데이터 처리
             if "," in image_data:
-                mime_type = image_data.split(";")[0].split(":")[1] # 예: image/jpeg
+                mime_type = image_data.split(";")[0].split(":")[1]
                 base64_string = image_data.split(",")[1]
             else:
                 mime_type = "image/jpeg"
                 base64_string = image_data
 
-            api_key = os.environ.get("GOOGLE_API_KEY")
+            # 🔥 핵심 1: API 키에 실수로 들어간 공백이나 줄바꿈 완벽 제거
+            api_key = os.environ.get("GOOGLE_API_KEY", "").strip()
             if not api_key:
                 self.wfile.write(json.dumps({"error": "API 키가 설정되지 않았습니다."}).encode('utf-8'))
                 return
 
-            # 🔥 라이브러리 없이 구글 Gemini 서버로 직접 요청 보내기 (가장 확실한 방법)
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+            # 🔥 핵심 2: v1beta 대신 가장 안정적인 정식 버전(v1) 엔드포인트 사용
+            url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
 
             prompt = """
             첨부된 사진 속 인물의 스타일과 분위기를 분석해서, 틱톡 댄스 프롬프트에 쓸 데이터를 JSON 형식으로만 답해줘.
@@ -57,7 +57,6 @@ class handler(BaseHTTPRequestHandler):
             "song_vibe" (어울리는 노래 분위기, 영어로)
             """
 
-            # 구글 서버가 요구하는 정확한 데이터 형식
             payload = {
                 "contents": [{
                     "parts": [
@@ -72,14 +71,12 @@ class handler(BaseHTTPRequestHandler):
                 }]
             }
 
-            # HTTP 요청 전송
             req = urllib.request.Request(url, data=json.dumps(payload).encode('utf-8'), headers={'Content-Type': 'application/json'})
             
             with urllib.request.urlopen(req) as response:
                 res_body = response.read().decode('utf-8')
                 res_json = json.loads(res_body)
                 
-                # 답변 추출
                 result_text = res_json['candidates'][0]['content']['parts'][0]['text'].strip()
                 
                 if result_text.startswith("```json"):
@@ -89,5 +86,9 @@ class handler(BaseHTTPRequestHandler):
                     
                 self.wfile.write(result_text.encode('utf-8'))
 
+        except HTTPError as e:
+            # 🔥 핵심 3: 구글 서버가 숨겨버린 '진짜' 에러 원인을 강제로 읽어와서 화면에 출력
+            error_msg = e.read().decode('utf-8')
+            self.wfile.write(json.dumps({"error": f"구글 API 상세 에러: {error_msg}"}).encode('utf-8'))
         except Exception as e:
-            self.wfile.write(json.dumps({"error": str(e)}).encode('utf-8'))
+            self.wfile.write(json.dumps({"error": f"서버 내부 에러: {str(e)}"}).encode('utf-8'))
