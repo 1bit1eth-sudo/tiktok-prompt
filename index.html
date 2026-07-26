@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TikTok 댄스 프롬프트 생성기</title>
+    <title>TikTok 댄스 프롬프트 생성기 (AI 비전)</title>
     <style>
         :root {
             --primary: #ff0050;
@@ -30,6 +30,19 @@
             padding: 30px;
             border-radius: 12px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .ai-box {
+            background: #e9ecef;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            border: 2px dashed #adb5bd;
+            text-align: center;
+        }
+        .ai-box label {
+            cursor: pointer;
+            color: var(--primary);
+            font-size: 18px;
         }
         .form-group {
             margin-bottom: 15px;
@@ -96,6 +109,12 @@
             right: 15px;
             margin: 0;
         }
+        #loadingMsg {
+            display: none;
+            color: var(--primary);
+            font-weight: bold;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -103,6 +122,12 @@
 <h1>TikTok 댄스 프롬프트 생성기</h1>
 
 <div class="container">
+    <div class="ai-box">
+        <label for="imageUpload">📸 여기를 눌러 사진을 올리면 AI가 빈칸을 채워줍니다!</label>
+        <input type="file" id="imageUpload" accept="image/*" style="display:none;" onchange="analyzeImage()">
+        <p id="loadingMsg">🤖 Gemini AI가 사진을 열심히 분석 중입니다... 잠시만 기다려주세요 ⏳</p>
+    </div>
+
     <form id="promptForm">
         <div class="form-group">
             <label for="song">노래 제목 (Song)</label>
@@ -114,19 +139,19 @@
         </div>
         <div class="form-group">
             <label for="outfit">의상 (Outfit)</label>
-            <input type="text" id="outfit" required placeholder="예: oversized white tee, baggy blue jeans">
+            <input type="text" id="outfit" required placeholder="AI가 채워줍니다 혹은 직접 입력">
         </div>
         <div class="form-group">
             <label for="move1">안무 1 (Move 1)</label>
-            <input type="text" id="move1" required placeholder="예: hip-hop groove">
+            <input type="text" id="move1" required placeholder="AI가 채워줍니다 혹은 직접 입력">
         </div>
         <div class="form-group">
             <label for="move2">안무 2 (Move 2)</label>
-            <input type="text" id="move2" required placeholder="예: side-step clap">
+            <input type="text" id="move2" required placeholder="AI가 채워줍니다 혹은 직접 입력">
         </div>
         <div class="form-group">
             <label for="move3">안무 3 (Move 3)</label>
-            <input type="text" id="move3" required placeholder="예: spin and pose">
+            <input type="text" id="move3" required placeholder="AI가 채워줍니다 혹은 직접 입력">
         </div>
         <div class="form-group">
             <label for="gender">성별 (Gender)</label>
@@ -166,6 +191,56 @@
 </div>
 
 <script>
+    // --- 1. 사진 업로드 및 AI 분석 기능 추가 ---
+    async function analyzeImage() {
+        const fileInput = document.getElementById('imageUpload');
+        const file = fileInput.files[0];
+        if (!file) return;
+
+        const loadingMsg = document.getElementById('loadingMsg');
+        loadingMsg.style.display = 'block'; // 로딩 메시지 켜기
+
+        try {
+            // 이미지를 Base64 텍스트 형태로 변환
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = async function () {
+                const base64data = reader.result;
+                
+                // Vercel 파이썬 백엔드(api/prompt)로 데이터 전송
+                const response = await fetch('/api/prompt', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ image: base64data })
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    alert("분석 중 에러 발생: " + data.error);
+                } else {
+                    // AI가 응답한 데이터로 빈칸 자동 채우기!
+                    if(data.outfit) document.getElementById('outfit').value = data.outfit;
+                    if(data.move1) document.getElementById('move1').value = data.move1;
+                    if(data.move2) document.getElementById('move2').value = data.move2;
+                    if(data.move3) document.getElementById('move3').value = data.move3;
+                    if(data.gender) document.getElementById('gender').value = data.gender;
+                    if(data.age_range) document.getElementById('age_range').value = data.age_range;
+                    if(data.song_vibe) document.getElementById('song_vibe').value = data.song_vibe;
+                    
+                    alert("🎉 AI 분석 완료! 폼이 자동으로 채워졌습니다. (노래 제목과 아티스트만 입력해주세요)");
+                }
+                loadingMsg.style.display = 'none'; // 로딩 메시지 끄기
+            };
+        } catch (error) {
+            alert("네트워크 에러가 발생했습니다: " + error.message);
+            loadingMsg.style.display = 'none';
+        }
+        // 다음 업로드를 위해 input 초기화
+        fileInput.value = '';
+    }
+
+    // --- 2. 기존 프롬프트 생성 기능 ---
     function generatePrompts() {
         const outfit = document.getElementById('outfit').value || "oversized white tee, baggy blue jeans";
         const move1 = document.getElementById('move1').value || "hip-hop groove";
@@ -176,14 +251,13 @@
         const dur = document.getElementById('duration').value || "15";
         const vibe = document.getElementById('song_vibe').value || "upbeat K-pop synth track";
 
-        // Grok Prompt 생성 로직
+        // Grok Prompt
         const motion = `smoothly transitions from a ${move1} into a ${move2}, and finishes with a ${move3}`;
         const grokPrompt = `A ${dur}-second vertical 9:16 video of a ${gender} ${age} K-pop-style dancer. They are wearing ${outfit}. The dancer ${motion}. The camera slowly pulls back, capturing the dynamic movement. Lighting is vibrant neon-pink and blue wash, and the background is a pastel-colored bedroom with LED strips. Audio: Synthesized ${vibe} with synchronized heavy dance beats matching the choreography.`;
 
-        // Google Flow Prompt 생성 로직
+        // Google Flow Prompt
         const googlePrompt = `Shot Specification for a ${dur}-second vertical (9:16) video:\n\nSubject: A ${age} ${gender} K-pop-style dancer.\nClothing: ${outfit}.\nAction: The subject performs a highly synchronized dance routine, executing a ${move1}, immediately followed by a ${move2}, and ending with a ${move3}.\nContext/Environment: A pastel-colored bedroom illuminated by glowing LED strips.\nCamera direction: A medium tracking shot that follows the dancer's movements, maintaining focus on the choreography.\nLighting and tone: Cinematic color grading, vibrant neon-pink and blue lighting, highly detailed.`;
 
-        // 결과 화면에 출력
         document.getElementById('grokResult').value = grokPrompt;
         document.getElementById('googleResult').value = googlePrompt;
         document.getElementById('resultSection').style.display = 'block';
