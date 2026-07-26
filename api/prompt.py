@@ -40,7 +40,7 @@ class handler(BaseHTTPRequestHandler):
             image_bytes = base64.b64decode(image_data)
             
             # 4. Gemini 1.5 Flash 모델에게 사진 분석 명령 내리기 (원상복구됨)
-            model = genai.GenerativeModel('gemini-1.5-flash')
+            model = genai.GenerativeModel('gemini-1.5-flash-latest')
             prompt = """
             첨부된 사진 속 인물의 스타일과 분위기를 분석해서, 틱톡 댄스 프롬프트에 쓸 데이터를 JSON 형식으로만 답해줘.
             부연 설명은 절대 하지 말고 오직 아래 키 값을 가진 JSON만 반환해.
