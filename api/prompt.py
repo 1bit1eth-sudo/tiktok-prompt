@@ -4,8 +4,8 @@ import os
 import base64
 import google.generativeai as genai
 
-# 1. Vercel에 아까 저장한 Gemini API 키 불러오기
-genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
+# 1. Vercel에 설정한 GOOGLE_API_KEY 불러오기 (환경 변수 이름 수정됨)
+genai.configure(api_key=os.environ.get("GOOGLE_API_KEY"))
 
 class handler(BaseHTTPRequestHandler):
     # 2. CORS 설정: 브라우저(프론트엔드)에서 이 백엔드를 호출할 수 있도록 허가해주는 보안 설정
@@ -39,8 +39,8 @@ class handler(BaseHTTPRequestHandler):
                 image_data = image_data.split(",")[1]
             image_bytes = base64.b64decode(image_data)
             
-            # 4. Gemini 1.5 Flash 모델에게 사진 분석 명령 내리기
-            model = genai.GenerativeModel('gemini-1.5-flash')
+            # 4. Gemini 2.5 Flash 모델에게 사진 분석 명령 내리기 (최신 모델로 수정됨)
+            model = genai.GenerativeModel('gemini-2.5-flash')
             prompt = """
             첨부된 사진 속 인물의 스타일과 분위기를 분석해서, 틱톡 댄스 프롬프트에 쓸 데이터를 JSON 형식으로만 답해줘.
             부연 설명은 절대 하지 말고 오직 아래 키 값을 가진 JSON만 반환해.
