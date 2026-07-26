@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TikTok 댄스 프롬프트 생성기</title>
+    <style>
+        :root {
+            --primary: #ff0050;
+            --secondary: #00f2fe;
+            --bg: #f8f9fa;
+            --text: #212529;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            padding: 15px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #d40042;
+        }
+        .result-section {
+            margin-top: 30px;
+            display: none;
+        }
+        .prompt-box {
+            background: #f1f3f5;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        .prompt-box h3 {
+            margin-top: 0;
+            color: var(--primary);
+        }
+        textarea {
+            width: 100%;
+            height: 140px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-sizing: border-box;
+            resize: vertical;
+        }
+        .copy-btn {
+            background-color: var(--text);
+            width: auto;
+            padding: 8px 15px;
+            font-size: 14px;
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+
+<h1>TikTok 댄스 프롬프트 생성기</h1>
+
+<div class="container">
+    <form id="promptForm">
+        <div class="form-group">
+            <label for="song">노래 제목 (Song)</label>
+            <input type="text" id="song" required placeholder="예: Supernatural">
+        </div>
+        <div class="form-group">
+            <label for="artist">아티스트 (Artist)</label>
+            <input type="text" id="artist" required placeholder="예: NewJeans">
+        </div>
+        <div class="form-group">
+            <label for="outfit">의상 (Outfit)</label>
+            <input type="text" id="outfit" required placeholder="예: oversized white tee, baggy blue jeans">
+        </div>
+        <div class="form-group">
+            <label for="move1">안무 1 (Move 1)</label>
+            <input type="text" id="move1" required placeholder="예: hip-hop groove">
+        </div>
+        <div class="form-group">
+            <label for="move2">안무 2 (Move 2)</label>
+            <input type="text" id="move2" required placeholder="예: side-step clap">
+        </div>
+        <div class="form-group">
+            <label for="move3">안무 3 (Move 3)</label>
+            <input type="text" id="move3" required placeholder="예: spin and pose">
+        </div>
+        <div class="form-group">
+            <label for="gender">성별 (Gender)</label>
+            <input type="text" id="gender" value="female">
+        </div>
+        <div class="form-group">
+            <label for="age_range">연령대 (Age Range)</label>
+            <input type="text" id="age_range" value="teen">
+        </div>
+        <div class="form-group">
+            <label for="duration">영상 길이 (Duration - 초)</label>
+            <input type="number" id="duration" value="15">
+        </div>
+        <div class="form-group">
+            <label for="song_vibe">노래 분위기 (Song Vibe - Grok 전용)</label>
+            <input type="text" id="song_vibe" value="upbeat K-pop synth track">
+        </div>
+        
+        <button type="button" onclick="generatePrompts()">프롬프트 생성하기</button>
+    </form>
+
+    <div class="result-section" id="resultSection">
+        <h2>✨ 생성된 프롬프트</h2>
+        
+        <div class="prompt-box">
+            <button class="copy-btn" onclick="copyText('grokResult')">복사하기</button>
+            <h3>Grok Video</h3>
+            <textarea id="grokResult" readonly></textarea>
+        </div>
+
+        <div class="prompt-box">
+            <button class="copy-btn" onclick="copyText('googleResult')">복사하기</button>
+            <h3>Google Flow</h3>
+            <textarea id="googleResult" readonly></textarea>
+        </div>
+    </div>
+</div>
+
+<script>
+    function generatePrompts() {
+        const outfit = document.getElementById('outfit').value || "oversized white tee, baggy blue jeans";
+        const move1 = document.getElementById('move1').value || "hip-hop groove";
+        const move2 = document.getElementById('move2').value || "side-step clap";
+        const move3 = document.getElementById('move3').value || "spin and pose";
+        const gender = document.getElementById('gender').value || "female";
+        const age = document.getElementById('age_range').value || "teen";
+        const dur = document.getElementById('duration').value || "15";
+        const vibe = document.getElementById('song_vibe').value || "upbeat K-pop synth track";
+
+        // Grok Prompt 생성 로직
+        const motion = `smoothly transitions from a ${move1} into a ${move2}, and finishes with a ${move3}`;
+        const grokPrompt = `A ${dur}-second vertical 9:16 video of a ${gender} ${age} K-pop-style dancer. They are wearing ${outfit}. The dancer ${motion}. The camera slowly pulls back, capturing the dynamic movement. Lighting is vibrant neon-pink and blue wash, and the background is a pastel-colored bedroom with LED strips. Audio: Synthesized ${vibe} with synchronized heavy dance beats matching the choreography.`;
+
+        // Google Flow Prompt 생성 로직
+        const googlePrompt = `Shot Specification for a ${dur}-second vertical (9:16) video:\n\nSubject: A ${age} ${gender} K-pop-style dancer.\nClothing: ${outfit}.\nAction: The subject performs a highly synchronized dance routine, executing a ${move1}, immediately followed by a ${move2}, and ending with a ${move3}.\nContext/Environment: A pastel-colored bedroom illuminated by glowing LED strips.\nCamera direction: A medium tracking shot that follows the dancer's movements, maintaining focus on the choreography.\nLighting and tone: Cinematic color grading, vibrant neon-pink and blue lighting, highly detailed.`;
+
+        // 결과 화면에 출력
+        document.getElementById('grokResult').value = grokPrompt;
+        document.getElementById('googleResult').value = googlePrompt;
+        document.getElementById('resultSection').style.display = 'block';
+    }
+
+    function copyText(elementId) {
+        const copyText = document.getElementById(elementId);
+        copyText.select();
+        copyText.setSelectionRange(0, 99999);
+        navigator.clipboard.writeText(copyText.value).then(() => {
+            alert("프롬프트가 복사되었습니다!");
+        });
+    }
+</script>
+</body>
+</html>
