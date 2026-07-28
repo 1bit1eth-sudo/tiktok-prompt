@@ -35,14 +35,13 @@ class handler(BaseHTTPRequestHandler):
                 mime_type = "image/jpeg"
                 base64_string = image_data
 
-            # 🔥 핵심 1: API 키에 실수로 들어간 공백이나 줄바꿈 완벽 제거
             api_key = os.environ.get("GOOGLE_API_KEY", "").strip()
             if not api_key:
                 self.wfile.write(json.dumps({"error": "API 키가 설정되지 않았습니다."}).encode('utf-8'))
                 return
 
-            # 🔥 핵심 2: v1beta 대신 가장 안정적인 정식 버전(v1) 엔드포인트 사용
-            url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
+            # 🔥 요청하신 gemini-3.6-flash 모델로 변경 완료 (v1beta 사용)
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key={api_key}"
 
             prompt = """
             첨부된 사진 속 인물의 스타일과 분위기를 분석해서, 틱톡 댄스 프롬프트에 쓸 데이터를 JSON 형식으로만 답해줘.
@@ -87,7 +86,6 @@ class handler(BaseHTTPRequestHandler):
                 self.wfile.write(result_text.encode('utf-8'))
 
         except HTTPError as e:
-            # 🔥 핵심 3: 구글 서버가 숨겨버린 '진짜' 에러 원인을 강제로 읽어와서 화면에 출력
             error_msg = e.read().decode('utf-8')
             self.wfile.write(json.dumps({"error": f"구글 API 상세 에러: {error_msg}"}).encode('utf-8'))
         except Exception as e:
